@@ -1,3 +1,39 @@
+#2021/7/29第九节 自己写库——创建库函数雏形
+
+知识点：通过结构体定义实现寄存器映射
+
+typedef unsigned int           uint32_t;
+
+typedef unsigned short       uint16_t;
+
+typedef struct
+
+{
+
+uint32_t CRL;
+
+uint32_t CRH;
+
+uint32_t IDR;
+
+uint32_t ODR;
+
+uint32_t BSRR;
+
+uint32_t BRR;
+
+uint32_t LCKR;
+
+}GPIO_TypeDef;
+
+#define GPIOB ((GPIO_TypeDef*)GPIOB_BASE)
+
+
+
+引用寄存器：
+
+GPIOB->CRL
+
 #2021/7/28第八节寄存器映射代码讲解
 
 将寄存器映射写在stm32f10x.h里面
