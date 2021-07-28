@@ -1,3 +1,35 @@
+#2021/7/28第八节寄存器映射代码讲解
+
+将寄存器映射写在stm32f10x.h里面
+
+用#define 来映射
+
+一、总线基地址
+
+#define PERIPH_BASE   ((unsigned int)0x40000000)
+
+#define APB1PERIPH_BASE  PERIPH_BASE
+
+#define APB2PERIPH_BASE  (PERIPH_BASE+0x10000)
+
+#define AHBPERIPH_BASE  (PERIPH_BASE+0x20000)
+
+二、寄存器基地址
+
+#define RCC_BASE   (AHBPERIPH_BASE+ 0x1000)
+
+#define GPIOB_BASE (APB2PERIPH_BASE+ 0x0c00)
+
+三、具体寄存器绝对地址
+
+#define RCC_APB2ENR  *(unsigned int *)(RCC_BASE+ 0x18)
+
+#define GPIOB_CRL  *(unsigned int *)(GPIOB_BASE+ 0x00)
+
+#define GPIOB_CRH  *(unsigned int *)(GPIOB_BASE+ 0x04)
+
+#define GPIOB_ODR  *(unsigned int *)(GPIOB_BASE+ 0x0C)
+
 #2021/7/23 第七节点亮led—— 跟51单片机一样写代码
 
 一、 #if 0                #endif   ——可以使某部分代码不编译
