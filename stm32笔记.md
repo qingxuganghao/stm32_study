@@ -1,8 +1,10 @@
-#2021/7/29第九节 自己写库——创建库函数雏形
+# 2021/7/29第九节 自己写库——创建库函数雏形
 
-知识点：通过结构体定义实现寄存器映射
+## 知识点：通过结构体定义实现寄存器映射
 
+```c
 typedef unsigned int           uint32_t;
+
 
 typedef unsigned short       uint16_t;
 
@@ -27,21 +29,26 @@ uint32_t LCKR;
 }GPIO_TypeDef;
 
 #define GPIOB ((GPIO_TypeDef*)GPIOB_BASE)
-
+```
 
 
 引用寄存器：
 
+```c
 GPIOB->CRL
+```
 
-#2021/7/28第八节寄存器映射代码讲解
+*****
 
-将寄存器映射写在stm32f10x.h里面
+# 2021/7/28第八节寄存器映射代码讲解
 
-用#define 来映射
+* __将寄存器映射写在stm32f10x.h里面__
 
-一、总线基地址
+* __用#define 来映射__
 
+ 一、总线基地址
+
+```c
 #define PERIPH_BASE   ((unsigned int)0x40000000)
 
 #define APB1PERIPH_BASE  PERIPH_BASE
@@ -49,15 +56,19 @@ GPIOB->CRL
 #define APB2PERIPH_BASE  (PERIPH_BASE+0x10000)
 
 #define AHBPERIPH_BASE  (PERIPH_BASE+0x20000)
+```
 
 二、寄存器基地址
 
+```c
 #define RCC_BASE   (AHBPERIPH_BASE+ 0x1000)
 
 #define GPIOB_BASE (APB2PERIPH_BASE+ 0x0c00)
+```
 
-三、具体寄存器绝对地址
 
+ 三、具体寄存器绝对地址
+```c
 #define RCC_APB2ENR  *(unsigned int *)(RCC_BASE+ 0x18)
 
 #define GPIOB_CRL  *(unsigned int *)(GPIOB_BASE+ 0x00)
@@ -65,10 +76,12 @@ GPIOB->CRL
 #define GPIOB_CRH  *(unsigned int *)(GPIOB_BASE+ 0x04)
 
 #define GPIOB_ODR  *(unsigned int *)(GPIOB_BASE+ 0x0C)
+```
+*****
 
-#2021/7/23 第七节点亮led—— 跟51单片机一样写代码
+# 2021/7/23 第七节点亮led—— 跟51单片机一样写代码
 
-一、 #if 0                #endif   ——可以使某部分代码不编译
+一、` #if 0                #endif`   ——可以使某部分代码不编译
 
 二、端口对应地址算法：
 
@@ -78,11 +91,11 @@ GPIOB->CRL
 
 四、程序步骤
 
-1.打开GPIOB端口的时钟 *(unsigned int *)0x40021018 |= ((1)<<3);
-
-2.配置IO口为输出 *(unsigned int  * )0x40010C00 |= ( (1)<<(4*0) ) ;
-
-3.控制ODR寄存器 *(unsigned int  *)0x40010C0C &=~(1<<0);
+1.打开GPIOB端口的时钟` *(unsigned int *)0x40021018 |= ((1)<<3);`
+    
+2.配置IO口为输出 `*(unsigned int  * )0x40010C00 |= ( (1)<<(4*0) ) ;`
+    
+3.控制ODR寄存器` *(unsigned int  *)0x40010C0C &=~(1<<0);`
 
 (每个寄存器或者端口的地址都可以在用户手册中找到，用其基地址加上对应寄存器的偏移)
 
@@ -98,11 +111,11 @@ GPIOB->CRL
 
 二.代码的编译
 
-1.#include"stm32f10x.h"（如果没有去工程目录下创建）（用于实现寄存器映射）
+1.`#include"stm32f10x.h"`（如果没有去工程目录下创建）（用于实现寄存器映射）
 
-2.int main（void）
+2.`int main（void）`
 
-3.void SystemInit(void)（引用固件库）
+3.`void SystemInit(void)`（引用固件库）
 
 三、烧录
 
@@ -114,15 +127,15 @@ GPIOB->CRL
 
 4.烧录
 
+*****
 
-
-#2021/7/20 第六节下 ——寄存器映射
+# 2021/7/20 第六节下 ——寄存器映射
 
 一、1.三条总线及其基地址：APB1-基地址0x4000 0000   APB2-0x4001 0000   AHB-0x4001 8000（根据速度划分）
 
-2.先找到总线的基地址，由基地址加上某个寄存器外设的偏移地址，可以找到某个寄存器外设的基地址。（总线基地址+寄存器外设偏移地址=外设基地址）
+ 2.先找到总线的基地址，由基地址加上某个寄存器外设的偏移地址，可以找到某个寄存器外设的基地址。（总线基地址+寄存器外设偏移地址=外设基地址）
 
-3.由寄存器相对于外设的基地址，可以算出外设绝对的地址.然后就可以通过c语言指针访问某个寄存器.
+ 3.由寄存器相对于外设的基地址，可以算出外设绝对的地址.然后就可以通过c语言指针访问某个寄存器.
 
 二、c语言对寄存器的封装
 
@@ -130,19 +143,19 @@ GPIOB->CRL
 
 （1）先定义外设基地址（外设的地址就等于APB1的地址，从APB1开始）（2）定义总线基地址（外设基地址加其偏移）（3）定义GPIO外设基地址（APB2+ABCDEFG的对应的偏移地址）（4）具体某个外设寄存器绝对地址（  GPIO基地址加上具体寄存器对应偏移）
 
-2.用指针操作* (unsigned int*)
+2.用指针操作`* (unsigned int*)`
 
-3.GPIOB_ODR &= ~(1<<0)//让PB0输出低电平；（取反相与实现清零）
+3.`GPIOB_ODR &= ~(1<<0)//让PB0输出低电平；（取反相与实现清零）`
 
-GPIO_ODR |= (1<<0)//让PB0输出高电平；（置1相加实现高电平）
+`GPIO_ODR |= (1<<0)//让PB0输出高电平；（置1相加实现高电平）`
 
 （1<<0左移0位——则为PB0；“|”相或 ； "~"取反；"&"相与）
 
 三、使用结构体封装寄存器列表或使用结构体指针访问寄存器
 
+*****
 
-
-#2021/7/18 第六节——寄存器
+# 2021/7/18 第六节——寄存器
 
 1.看丝印，辨别芯片正正方向
 
@@ -165,8 +178,6 @@ GPIO_ODR |= (1<<0)//让PB0输出高电平；（置1相加实现高电平）
 9.APB分为APB1（高速总线）（有GPIO）和APB2（低速总线）（有定时器和串口）.
 
 10.ARM为32位——4G内存，分为了8块，每一块512M。block0用来放flash；block1放SRAM；block2放外设寄存器；block3.4放FSMC；block5时FSMC寄存器，block6没有用；block7放内核的寄存器外设。
-
-![img](file:///C:\Users\76170\AppData\Local\Temp\ksohtml16160\wps1.jpg) 
 
 11. c语言里面*代表取地址。
 12. (unsigned int*)——强制类型转换为地址.
