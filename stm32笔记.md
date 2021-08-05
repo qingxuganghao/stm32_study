@@ -1,3 +1,65 @@
+# 2021/8/4 第十一节 新建工程——库函数版
+
+## 新建工程
+
+### 1.1新建本地工程文件
+
+1. 新建一个工程模板的文件夹，在它之下新建六个文件夹
+
+   * Doc ：用来存放程序说明的文件
+
+   * Libraries ：用来存库文件
+
+   * Listing ：用来存放编译器编译时产生的c列表清单（自动生成）
+
+   * Output：用来存放调试信息，hex文件，封装库等（自动生成）
+
+   * Project：用来存放工程文件
+
+   * User：用户编写的驱动文件
+2. 新建好后将库文件添加到相应文件夹下：
+   * Doc：readme.txt
+   
+   * Libraries：1.CMSIS：里面存放CM3内核有关的库文件；               2.STM32F10x_Stdperiph_Driver:STM32外设库文件。
+   
+   * User：1.stm32f10x_conf.h: 用来配置库的头文件
+   
+     2.stm32f1.x_it.h    stm32f10x_it.c :中断相关的函数在这个文件李编写
+   
+     3.main.c：main函数文件
+
+### 1.2新建工程
+
+1. 新建工程
+
+2. 选择CPU型号
+
+3. **添加组文件夹**
+
+   * 在新建的工程中添加 5 个组文件夹，用来存放各种不同的文件：
+
+     1.STARTUP:startup_2f10x_hd.s
+
+     2.CMSIS:core_cm3.c、system_stm32f10x.c
+
+     3.FWLB:STM32F10X_StdPeriph_Driver\src下的全部c文件，即固件库
+
+     4.USER:main.c、stm32f10x_it.c
+
+     5.DOC:README.TXT
+
+4. Target 中选中微库Use MicroLib，为的是在日后编写串口驱动的时候可以使用 printf 函数。
+
+5. 在 Output 选项卡中将Create HEX File 选项勾上。
+6. 在 Listing 选项卡中把输出文件夹定位到我们工程目录下的“Listing”文件夹
+7. 在 C/C++ 选项卡中添加处理宏及编译器编译的时候查找的头文件路径
+8. Debug 中选择 CMSIS-DAP Debugger
+9. Utilities 选择 Use Debug Driver
+
+
+*****
+
+
 # 2021/8/2 第十节 初识stm32固件库
 
 1-汇编编写的启动文件
