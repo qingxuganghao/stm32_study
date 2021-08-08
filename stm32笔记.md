@@ -1,14 +1,18 @@
+# 2021/8/9 更新第十二节笔记
+
 # 2021/8/6 第十二节 使用固件库点亮LED
 
 * 要点：
 
-1. 使能 GPIO 端口时钟；
+1. 使能 GPIO 端口时钟；```RCC_APB2PeriphClockCmd( LED_G_GPIO_CLK , ENABLE);```
 
 2. 初始化 GPIO 目标引脚为推挽输出模式；
 
 3. 编写简单测试程序，控制 GPIO 引脚输出高、低电平。
 
 * 在“工程模板”之上新建“bsp_led.c”及“bsp_led.h”文件，其中的“bsp”即 Board Support Packet 的缩写 (板级支持包).
+
+  并在 C/C++ 选项卡中添加“bsp_led.h”的路径.
 
 * 函数执行流程如下：
 
@@ -30,7 +34,61 @@
 
   (6) 使用宏控制 RGB 灯默认关闭。
 
+* 注意：初始化时的顺序也很重要否则会影响灯一开始的变化
+```c
+/*定义一个GPIO_InitTypeDef类型的结构体*/
+		GPIO_InitTypeDef GPIO_InitStructure;
 
+		/*开启LED相关的GPIO外设时钟*/
+		RCC_APB2PeriphClockCmd( LED1_GPIO_CLK | LED2_GPIO_CLK | LED3_GPIO_CLK, ENABLE);
+		/*选择要控制的GPIO引脚*/
+		GPIO_InitStructure.GPIO_Pin = LED1_GPIO_PIN;	
+
+		/*设置引脚模式为通用推挽输出*/
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;   
+
+		/*设置引脚速率为50MHz */   
+		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; 
+
+		/*调用库函数，初始化GPIO*/
+		GPIO_Init(LED1_GPIO_PORT, &GPIO_InitStructure);	
+		
+		/*选择要控制的GPIO引脚*/
+		GPIO_InitStructure.GPIO_Pin = LED2_GPIO_PIN;
+```
+
+
+* 延时函数
+```c
+void Delay( uint32_ count )
+{
+    for(;count!=0;count--);
+}
+int main(void)
+{
+    while(1)
+    {
+        GPIO_SetBits(LED_G_GPIO_PORT,LED_G_GPIO_PIN);
+        Delay(0xFFFFF);
+        GPIO_ResetBits(LED_G_GPIO_PORT,LED_G_GPIO_PIN);
+        Delay(0xFFFFF);
+    }
+}
+```
+* 使能不同的led灯时，模式和速度不用改变，只需要选择不同的GPIO引脚将每个led的GPIO初始化即可
+
+  ``````c
+  		/*选择要控制的GPIO引脚*/
+  		GPIO_InitStructure.GPIO_Pin = LED2_GPIO_PIN;
+  
+  		/*调用库函数，初始化GPIO*/
+  		GPIO_Init(LED2_GPIO_PORT, &GPIO_InitStructure);
+  		
+  		/*选择要控制的GPIO引脚*/
+  		GPIO_InitStructure.GPIO_Pin = LED3_GPIO_PIN;
+  
+  		/*调用库函数，初始化GPIOF*/
+  		GPIO_Init(LED3_GPIO_PORT, &GPIO_InitStructure);
 
 \：续行，后面不能有任何符号
 
@@ -180,7 +238,7 @@ int main(void)
    	uint16_t GPIO_Speed;
    	uint16_t GPIO_Mode;
    }GPIO_InitTypeDef;
-   ```
+```
 
 2. 使用枚举来定义各个属性的模式(**枚举中使用逗号，结构体使用分号**)
 
@@ -203,7 +261,7 @@ int main(void)
      GPIO_Mode_AF_OD = 0x1C,        // 复用开漏输出 (0001 1100)b
      GPIO_Mode_AF_PP = 0x18         // 复用推挽输出 (0001 1000)b
    }GPIOMode_TypeDef;
-   ```
+```
 
 3. 声明调用的官方函数
 
