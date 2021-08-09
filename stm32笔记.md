@@ -1,3 +1,136 @@
+# 第十二节 GPIO输入——按键检测
+
+* 按键已经带有电容（硬件去抖），不用再软件去抖；
+
+* 按键按下为高电平，上升沿输入；
+
+## 1.1添加新建文件
+
+1. 在工程目录user里添加bsp_key.h和bsp_key.c两个新文件.
+
+2. 在keil5里面添加bsp_key.c.
+## 1.2在bsp_key.h里面定义新的宏
+1. 添加条件编译的宏
+```c
+#ifndef __KEY_H
+#define	__KEY_H
+#endif /* __KEY_H */
+```
+2. 定义封装硬件相关的代码
+```c
+//  引脚定义
+#define    KEY1_GPIO_CLK     RCC_APB2Periph_GPIOA
+#define    KEY1_GPIO_PORT    GPIOA			   
+#define    KEY1_GPIO_PIN		 GPIO_Pin_0
+
+#define    KEY2_GPIO_CLK     RCC_APB2Periph_GPIOC
+#define    KEY2_GPIO_PORT    GPIOC		   
+#define    KEY2_GPIO_PIN		  GPIO_Pin_13
+```
+3. 声明bsp_key.c里面的函数，使得其可以被其他函数调用。
+```c
+void Key_GPIO_Config(void);
+uint8_t Key_Scan(GPIO_TypeDef* GPIOx,uint16_t GPIO_Pin);
+```
+## 1.3在bsp_key.c里面写函数
+1. 初始化按键
+```c
+void Key_GPIO_Config(void)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+	
+	/*开启按键端口的时钟*/
+	RCC_APB2PeriphClockCmd(KEY1_GPIO_CLK|KEY2_GPIO_CLK,ENABLE);
+	
+	//选择按键的引脚
+	GPIO_InitStructure.GPIO_Pin = KEY1_GPIO_PIN; 
+	// 设置按键的引脚为浮空输入
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; 
+	//使用结构体初始化按键
+	GPIO_Init(KEY1_GPIO_PORT, &GPIO_InitStructure);
+	
+	//选择按键的引脚
+	GPIO_InitStructure.GPIO_Pin = KEY2_GPIO_PIN; 
+	//设置按键的引脚为浮空输入
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING; 
+	//使用结构体初始化按键
+	GPIO_Init(KEY2_GPIO_PORT, &GPIO_InitStructure);	
+}
+```
+2. 按键读取函数
+```c
+uint8_t Key_Scan(GPIO_TypeDef* GPIOx,uint16_t GPIO_Pin)
+{			
+	/*检测是否有按键按下 */
+	if(GPIO_ReadInputDataBit(GPIOx,GPIO_Pin) == KEY_ON )  
+	{	 
+		/*等待按键释放 */
+		while(GPIO_ReadInputDataBit(GPIOx,GPIO_Pin) == KEY_ON);   
+		return 	KEY_ON;	 
+	}
+	else
+		return KEY_OFF;
+}
+```
+## 1.4在main函数里初始化和编写驱动程序
+1. 	初始化端口
+```c
+int main(void)
+{
+/* LED端口初始化 */
+	LED_GPIO_Config();
+
+	/* 按键端口初始化 */
+	Key_GPIO_Config();
+}
+```
+2. 编写按键函数
+```c
+	/* 轮询按键状态，若按键按下则反转LED */
+	while(1)                            
+	{	   
+		if( Key_Scan(KEY1_GPIO_PORT,KEY1_GPIO_PIN) == KEY_ON  )
+		{
+			/*LED1反转*/
+			LED1_TOGGLE;
+		} 
+
+		if( Key_Scan(KEY2_GPIO_PORT,KEY2_GPIO_PIN) == KEY_ON  )
+		{
+			/*LED2反转*/
+			LED2_TOGGLE;
+		}		
+```
+## 1.5 在bsp_led.h 添加反转宏定义
+```c
+/* 直接操作寄存器的方法控制IO */
+#define	digitalHi(p,i)		 {p->BSRR=i;}	 //输出为高电平		
+#define digitalLo(p,i)		 {p->BRR=i;}	 //输出低电平
+#define digitalToggle(p,i) {p->ODR ^=i;} //输出反转状态
+
+
+/* 定义控制IO的宏 */
+#define LED1_TOGGLE		 digitalToggle(LED1_GPIO_PORT,LED1_GPIO_PIN)
+#define LED1_OFF		   digitalHi(LED1_GPIO_PORT,LED1_GPIO_PIN)
+#define LED1_ON			   digitalLo(LED1_GPIO_PORT,LED1_GPIO_PIN)
+
+#define LED2_TOGGLE		 digitalToggle(LED2_GPIO_PORT,LED2_GPIO_PIN)
+#define LED2_OFF		   digitalHi(LED2_GPIO_PORT,LED2_GPIO_PIN)
+#define LED2_ON			   digitalLo(LED2_GPIO_PORT,LED2_GPIO_PIN)
+
+#define LED3_TOGGLE		 digitalToggle(LED3_GPIO_PORT,LED3_GPIO_PIN)
+#define LED3_OFF		   digitalHi(LED3_GPIO_PORT,LED3_GPIO_PIN)
+#define LED3_ON			   digitalLo(LED3_GPIO_PORT,LED3_GPIO_PIN)
+
+```
+
+
+
+
+
+
+*****
+
 # 2021/8/9 更新第十二节笔记
 
 # 2021/8/6 第十二节 使用固件库点亮LED
