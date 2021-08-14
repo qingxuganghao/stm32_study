@@ -1,4 +1,95 @@
-# 第十二节 GPIO输入——按键检测
+# 2021/8/14 第十三节 位带操作——GPIO输出和输入
+
+## 一.位带简介 
+
+* 位操作就是可以单独的对一个比特位读和写,在51单片机中用sbit来实现位操作；
+* 在stm32中通过位带操作来实现，在 STM32 中，有两个地方实现了位带，一个是 **SRAM 区的最低 1MB 空间**，令一个是**外设区最低 1MB 空间**。这两个 1MB 的空间除了可以像正常的 RAM 一样操作外，他们还有自己的位带别名区，位带别名区把这 **1MB 的空间的每一个位膨胀成一个 32 位的字**，当访问位带别名区的这些字时，就可以达到访问位带区某个比特位的目的。
+### 1.1外设位带区
+
+* 外 设 外 带 区 的 地 址 为：0X40000000~0X40100000， 大 小 为 1MB， 这 1MB 的 大 小 在
+
+  103 系 列 大/中/小 容 量 型 号 的 单 片 机 中 包 含 了 片 上 外 设 的 全 部 寄 存 器.
+
+### 1.2SRAM 位带区
+* SRAM 的位带区的地址为：0X2000 0000~X2010 0000，大小为 1MB，经过膨胀后的位带别名区
+地址为：0X2200 0000~0X23FF FFFF，大小为 32MB。操作 SRAM 的比特位这个用得很少。
+### 1.3位带区和位带别名区地址转换
+* 可以通过指针的形式访问位带别名区地址从而达到操作位带区比特位的效果。这两个地
+址直接转换。
+* 为了方便操作，我们可以把这两个公式合并成一个公式，把“位带地址 + 位序号”转换成别名区
+地址统一成一个宏。
+```c
+// 把“位带地址 + 位序号”转换成别名地址的宏
+#define BITBAND(addr, bitnum) ((addr & 0xF0000000)+0x02000000+((addr &␣ ,→0x00FFFFFF)<<5)+(bitnum<<2))
+```
+```c
+// 把一个地址转换成一个指针
+#define MEM_ADDR(addr) *((volatile unsigned long *)(addr))
+// 把位带别名区地址转换成指针
+#define BIT_ADDR(addr, bitnum) MEM_ADDR(BITBAND(addr, bitnum))
+```
+### 2.1寄存器映射
+```c
+// GPIO ODR 和 IDR 寄存器地址映射
+#define GPIOA_ODR_Addr (GPIOA_BASE+12) //0x4001080C
+#define GPIOB_ODR_Addr (GPIOB_BASE+12) //0x40010C0C
+#define GPIOC_ODR_Addr (GPIOC_BASE+12) //0x4001100C
+#define GPIOD_ODR_Addr (GPIOD_BASE+12) //0x4001140C
+#define GPIOE_ODR_Addr (GPIOE_BASE+12) //0x4001180C
+#define GPIOF_ODR_Addr (GPIOF_BASE+12) //0x40011A0C
+#define GPIOG_ODR_Addr (GPIOG_BASE+12) //0x40011E0C
+#define GPIOA_IDR_Addr (GPIOA_BASE+8) //0x40010808
+#define GPIOB_IDR_Addr (GPIOB_BASE+8) //0x40010C08
+#define GPIOC_IDR_Addr (GPIOC_BASE+8) //0x40011008
+#define GPIOD_IDR_Addr (GPIOD_BASE+8) //0x40011408
+#define GPIOE_IDR_Addr (GPIOE_BASE+8) //0x40011808
+#define GPIOF_IDR_Addr (GPIOF_BASE+8) //0x40011A08
+#define GPIOG_IDR_Addr (GPIOG_BASE+8) //0x40011E08
+```
+### 2.2位操作
+```c
+// 单独操作 GPIO 的某一个 IO 口，n(0,1,2...16),n 表示具体是哪一个 IO 口 
+#define PAout(n) BIT_ADDR(GPIOA_ODR_Addr,n) //输出
+#define PAin(n) BIT_ADDR(GPIOA_IDR_Addr,n) //输入
+#define PBout(n) BIT_ADDR(GPIOB_ODR_Addr,n) //输出
+#define PBin(n) BIT_ADDR(GPIOB_IDR_Addr,n) //输入
+#define PCout(n) BIT_ADDR(GPIOC_ODR_Addr,n) //输出
+#define PCin(n) BIT_ADDR(GPIOC_IDR_Addr,n) //输入
+#define PDout(n) BIT_ADDR(GPIOD_ODR_Addr,n) //输出
+#define PDin(n) BIT_ADDR(GPIOD_IDR_Addr,n) //输入
+#define PEout(n) BIT_ADDR(GPIOE_ODR_Addr,n) //输出
+#define PEin(n) BIT_ADDR(GPIOE_IDR_Addr,n) //输入
+#define PFout(n) BIT_ADDR(GPIOF_ODR_Addr,n) //输出
+#define PFin(n) BIT_ADDR(GPIOF_IDR_Addr,n) //输入
+#define PGout(n) BIT_ADDR(GPIOG_ODR_Addr,n) //输出
+#define PGin(n) BIT_ADDR(GPIOG_IDR_Addr,n) //输入
+```
+### 2.3主函数
+* 该工程我们直接从 LED-库函数操作移植过来，有关 LED GPIO 初始化和软件延时等函数我们直
+接用，修改的是控制 GPIO 输出的部分改成了位操作。该实验我们让 IO 口输出高低电平来控制
+LED 的亮灭，负逻辑点亮。具体使用哪一个 IO 和点亮方式由硬件平台决定。
+```c
+int main(void) 
+{ // 程序来到 main 函数之前，启动文件：statup_stm32f10x_hd.s 已经调用
+// SystemInit() 函数把系统时钟初始化成 72MHZ
+// SystemInit() 在 system_stm32f10x.c 中定义
+// 如果用户想修改系统时钟，可自行编写程序修改
+LED_GPIO_Config();
+while ( 1 ) {
+		// PB0 = 0, 点亮 LED
+		PBout(0)= 0;
+		SOFT_Delay(0x0FFFFF);
+		// PB1 = 1, 熄灭 LED
+		PBout(0)= 1;
+		SOFT_Delay(0x0FFFFF);
+	}
+}
+```
+
+
+*****
+
+# # 2021/8/10 第十二节 GPIO输入——按键检测
 
 * 按键已经带有电容（硬件去抖），不用再软件去抖；
 
@@ -690,3 +781,4 @@ GPIOB->CRL
 12. (unsigned int*)——强制类型转换为地址.
 13. STM32和51不同——没有<reg32.h>需要自己找寄存器对应地址.只能通过指针来操作.
 
+ 
