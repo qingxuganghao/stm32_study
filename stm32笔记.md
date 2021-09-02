@@ -1,4 +1,70 @@
+# 2021/8/31 第十六节 stm32中断应用概览
+
+## 一、异常类型
+
+1. STM32中断非常强大，每个外设都能产生中断.
+
+2. 异常就是中断，中断就是异常.
+
+3. 中断类型：
+   * 系统异常，体现在内核水平。（M3）
+   * 外部中断，体现在外设水平。
+
+## 二、NVIC简介
+1. NVIC：嵌套向量中断控制器，属于内核外设，管理着包括内核和片上所有外设的中断相关的功能.     两个重要的库文件：core_cm3.h和misc.h(存放有相关固件库函数)
+
+## 三、优先级的定义
+1. 优先级设定：NVIC->IPRx    仅使用高4位，第四位未使用，返回为0.
+
+2. 优先级分组：SCB->AIRCR:PRIGROUP[10:8]
+			分为主优先级（抢占优先级）和子优先级。
+	
+3. 当中断同时来时，先比较主优先级，主优先级相同再比较子优先级，数值越小优先级越高。
+	若主优先级和子优先级都相同，就比较其硬件中断编号。（参考参考手册_中断向量表）
+	
+4. 优先级分为5个组：
+
+      |      优先级分组      | 主优先级 | 子优先级 |       描述        |
+      | :------------------: | :------: | :------: | :---------------: |
+      | NVIC_PriorityGroup_0 |    0     |   0-15   | 主-0bit,  子-4bit |
+      | NVIC_PriorityGroup_1 |   0-1    |   0-7    | 主-1bit,  子-3bit |
+      | NVIC_PriorityGroup_2 |   0-3    |   0-3    | 主-2bit,  子-2bit |
+      | NVIC_PriorityGroup_3 |   0-7    |   0-1    | 主-3bit,  子-1bit |
+      | NVIC_PriorityGroup_4 |   0-15   |    0     | 主-4bit,  子-0bit |
+
+## 四、中断编程
+### 一、中断编程的顺序：
+
+1. 使能中断请求
+
+2. 配置中断优先级分组
+
+3. 配置NVIC寄存器，初始化NVIC_InitTypeDef;
+
+4. 编写中断服务函数
+
+### 二、使能中断请求
+* 相当于小门，中断使能寄存器是大门。
+### 三、中断优先级分组
+* misc.h里面NVIC_PriorityGroupConfig
+### 四、初始化NVIC_InitTypeDef
+1. NVIC_IRQChannel:中断源
+2. NVIC_IRQChannelPreemptionPriority:抢占优先级
+3. NVIC_IRQChannelSubPriority:子优先级
+4. NVIC_IRQChannelCmd:使能或者失能
+* 在misc.h里
+初始化函数NVIC_Init(NVIC_InitTypeDef* NVIC_InitStruct)
+### 五、编写中断服务函数
+* 为了方便读，将中断服务函数都写在stm32f10x_it.c文件里面
+* 中断源从stm32f10x.h的IRQn_Type里面找
+* 中断服务函数名称的编写：中断服务函数名称要跟启动文件stm32f10x_it.c里面的向量表的名称一致，才能确保中断服务函数可以执行，否则会一直执行空的中断服务函数。
+
+
+
+*****
+
 # 2021/8/20 第十五节RCC—使用HSE/HSI配置时钟
+
 * **RCC ：reset clock control 复位和时钟控制器。**
 ## 一.RCC 主要作用—时钟部分
 
